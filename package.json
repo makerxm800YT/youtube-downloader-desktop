@@ -1,20 +1,25 @@
 {
   "name": "youtube-downloader-desktop",
   "version": "1.0.0",
-  "description": "YouTube Downloader Desktop App",
+  "description": "A powerful YouTube video downloader desktop app",
   "main": "main.js",
+  "author": "Your Name",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
     "build:win": "electron-builder --win --x64",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
+    "build:mac": "electron-builder --mac --x64",
+    "build:linux": "electron-builder --linux --x64",
+    "publish": "electron-builder --win --mac --linux -p always",
+    "release": "electron-builder --win --mac --linux -p always"
   },
-  "author": "Your Name",
-  "license": "MIT",
   "devDependencies": {
     "electron": "^27.0.0",
     "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7"
   },
   "build": {
     "appId": "com.yourname.youtubedownloader",
@@ -22,17 +27,55 @@
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "**/*",
+      "!**/*.pyc",
+      "!__pycache__"
+    ],
     "win": {
-      "target": "nsis",
-      "icon": "icon.ico"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico",
+      "artifactName": "YouTube-Downloader-Setup-${version}.${ext}"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "icon.icns"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "icon.icns",
+      "category": "public.app-category.video",
+      "artifactName": "YouTube-Downloader-${version}.${ext}"
     },
     "linux": {
-      "target": "AppImage",
-      "icon": "icon.png"
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.png",
+      "category": "Video",
+      "artifactName": "YouTube-Downloader-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "YouTube Downloader",
+      "artifactName": "YouTube-Downloader-Setup-${version}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Makerxm800",
+      "repo": "youtube-downloader-desktop"
     }
   }
 }

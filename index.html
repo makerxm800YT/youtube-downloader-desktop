@@ -1,197 +1,657 @@
-// ============ DESKTOP APP INITIALIZATION ============
-// This replaces the web version code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>YouTube Downloader Desktop</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:      #0b0b0b;
+  --bg2:     #111111;
+  --card:    #161616;
+  --card2:   #1d1d1d;
+  --s3:      #242424;
+  --s4:      #2c2c2c;
+  --bdr:     #2e2e2e;
+  --red:     #e63232;
+  --redh:    #ff4f4f;
+  --redf:    rgba(230,50,50,0.12);
+  --grn:     #22c55e;
+  --ylw:     #f59e0b;
+  --blue:    #4285f4;
+  --blueh:   #6aa3ff;
+  --fg:      #f2f2f2;
+  --fg2:     #888;
+  --fg3:     #444;
+  --fg4:     #2a2a2a;
+  --radius:  14px;
+  --radius-sm:9px;
+  --radius-pill:999px;
+  --shadow:  0 8px 40px rgba(0,0,0,0.6);
+  --glow:    0 0 24px rgba(230,50,50,0.3);
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--fg);overflow:hidden}
 
-// Initialize desktop features
-async function initDesktopFeatures() {
-    if (!window.electronAPI || !window.electronAPI.isElectron) {
-        console.log('Running in browser mode');
-        return;
-    }
-    
-    console.log('Running in Desktop mode');
-    
-    // Show desktop settings
-    const desktopSettings = document.getElementById('desktop-settings');
-    if (desktopSettings) desktopSettings.style.display = 'block';
-    
-    // Load saved settings
-    try {
-        const settings = await window.electronAPI.getSettings();
-        if (settings) {
-            if (settings.downloadPath) {
-                document.getElementById('desktop-download-path').textContent = settings.downloadPath;
-            }
-            if (settings.theme) {
-                document.getElementById('theme-selector').value = settings.theme;
-                if (settings.theme === 'light') document.body.classList.add('light-theme');
-            }
-            if (settings.rememberSettings) {
-                document.getElementById('remember-settings').checked = settings.rememberSettings;
-            }
-            if (settings.autoUpdate) {
-                document.getElementById('auto-update').checked = settings.autoUpdate;
-            }
-        }
-    } catch (e) { console.error('Error loading settings:', e); }
-    
-    // Get app version
-    try {
-        const version = await window.electronAPI.getAppVersion();
-        document.getElementById('app-version').textContent = `v${version}`;
-    } catch (e) {}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--s4);border-radius:var(--radius-pill)}
+
+body::before{
+  content:"";position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;
 }
 
-// Add dropdown menu to user chip
-function addUserDropdown() {
-    const userChip = document.querySelector('.user-chip');
-    if (!userChip) return;
-    
-    // Check if dropdown already exists
-    if (userChip.parentElement.classList.contains('dropdown')) return;
-    
-    const dropdown = document.createElement('div');
-    dropdown.className = 'dropdown';
-    dropdown.style.position = 'relative';
-    
-    const dropdownContent = document.createElement('div');
-    dropdownContent.className = 'dropdown-content';
-    dropdownContent.innerHTML = `
-        <a onclick="switchAccount()">🔄 Switch Account</a>
-        <a onclick="showInfoModal()">ℹ️ About & Info</a>
-        <a onclick="window.open('https://github.com', '_blank')">⭐ Star on GitHub</a>
-        <a onclick="openSettings()">⚙️ Preferences</a>
-    `;
-    
-    userChip.parentNode.insertBefore(dropdown, userChip);
-    dropdown.appendChild(userChip);
-    dropdown.appendChild(dropdownContent);
+#app{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column}
+
+/* LOGIN SCREEN */
+#login-screen{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 0%, rgba(230,50,50,0.08) 0%, var(--bg) 70%);
+}
+.login-box{
+  width:420px;
+  background:var(--card);
+  border:1px solid var(--bdr);
+  border-radius:20px;
+  padding:40px 36px 32px;
+  box-shadow:var(--shadow);
+  animation:fadeUp 0.4s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.login-logo svg{width:44px;height:44px;flex-shrink:0}
+.login-logo-text h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;line-height:1.1}
+.login-logo-text p{font-size:11px;color:var(--fg3);margin-top:2px}
+
+.login-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:24px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--fg3);text-transform:uppercase;margin-bottom:6px}
+.field input{
+  width:100%;background:var(--s3);border:1px solid var(--bdr);
+  border-radius:var(--radius-sm);padding:11px 14px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--fg);
+  outline:none;transition:border .2s;
+}
+.field input:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--redf)}
+.field input::placeholder{color:var(--fg3)}
+
+.err-msg{font-size:12px;color:var(--red);min-height:18px;margin:4px 0 10px;display:none}
+.err-msg.show{display:block}
+
+.btn-main{
+  width:100%;padding:13px;border:none;border-radius:var(--radius-pill);
+  background:var(--red);color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;transition:background .2s,transform .1s,box-shadow .2s;
+  margin-top:4px;
+}
+.btn-main:hover{background:var(--redh);box-shadow:var(--glow);transform:translateY(-1px)}
+.btn-main:active{transform:translateY(0)}
+
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--fg3);font-size:12px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--bdr)}
+
+.btn-google{
+  width:100%;padding:11px;border:1px solid var(--bdr);border-radius:var(--radius-pill);
+  background:var(--s3);color:var(--fg);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
+  cursor:pointer;transition:background .2s,border-color .2s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-google:hover{background:var(--s4);border-color:var(--blue)}
+
+.login-toggle{text-align:center;margin-top:20px;font-size:13px;color:var(--fg2)}
+.login-toggle a{color:var(--red);cursor:pointer;font-weight:600;text-decoration:none}
+.login-toggle a:hover{text-decoration:underline}
+
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal{
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:18px;padding:32px 28px 24px;width:360px;
+  box-shadow:var(--shadow);animation:fadeUp .3s ease;
+}
+.modal h2{font-family:'Syne',sans-serif;font-size:17px;margin-bottom:6px}
+.modal p{font-size:12px;color:var(--fg2);margin-bottom:16px}
+
+/* MAIN APP */
+#main-app{display:none;flex-direction:column;height:100vh}
+#main-app.visible{display:flex}
+
+.header{
+  background:var(--bg2);border-bottom:1px solid var(--bdr);
+  padding:0 24px;height:58px;display:flex;align-items:center;gap:14px;
+  flex-shrink:0;
+}
+.header-logo{display:flex;align-items:center;gap:10px;margin-right:8px}
+.header-logo svg{width:32px;height:32px}
+.header-logo span{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+
+.tabbar{
+  background:var(--bg2);border-bottom:1px solid var(--bdr);
+  padding:0 20px;display:flex;gap:4px;flex-shrink:0;
+}
+.tab-btn{
+  padding:9px 18px;border:none;border-radius:var(--radius-pill);
+  background:transparent;color:var(--fg2);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .18s;margin:6px 0;
+  display:flex;align-items:center;gap:6px;
+}
+.tab-btn:hover{background:var(--s3);color:var(--fg)}
+.tab-btn.active{background:var(--redf);color:var(--red);font-weight:600}
+
+.user-chip{
+  margin-left:auto;display:flex;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:var(--radius-pill);padding:5px 14px 5px 6px;
+  cursor:pointer;
+}
+.avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--red);display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#fff;
+}
+.user-info{line-height:1.2}
+.user-name{font-size:12px;font-weight:600}
+.user-email{font-size:10px;color:var(--fg3)}
+.signout-btn{
+  font-size:11px;color:var(--fg3);cursor:pointer;padding:2px 6px;
+  border-radius:var(--radius-pill);transition:all .15s;
+  background:none;border:none;font-family:'DM Sans',sans-serif;
+}
+.signout-btn:hover{background:var(--s3);color:var(--red)}
+
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:24px;display:none}
+.page.active{display:block}
+
+.card{
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:var(--radius);padding:20px 22px;margin-bottom:14px;
+}
+.card-label{
+  font-size:10px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--fg3);margin-bottom:10px;
 }
 
-function openSettings() {
-    switchTab('settings');
+.url-row{display:flex;gap:8px;align-items:center}
+.url-input{
+  flex:1;background:var(--s3);border:1px solid var(--bdr);
+  border-radius:var(--radius-pill);padding:10px 18px;
+  font-family:'DM Mono',monospace,'DM Sans',sans-serif;font-size:13px;
+  color:var(--fg);outline:none;transition:border .2s;
+}
+.url-input:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--redf)}
+
+.pill-btn{
+  padding:9px 18px;border:none;border-radius:var(--radius-pill);
+  background:var(--s3);color:var(--fg2);
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.pill-btn:hover{background:var(--s4);color:var(--fg)}
+.pill-btn.red{background:var(--red);color:#fff}
+.pill-btn.red:hover{background:var(--redh);box-shadow:var(--glow)}
+.pill-btn.outline{background:transparent;border:1px solid var(--bdr)}
+.pill-btn.outline:hover{border-color:var(--red);color:var(--red)}
+
+.options-grid{display:flex;gap:16px;flex-wrap:wrap}
+.option-group{display:flex;flex-direction:column;gap:6px}
+.option-group label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+.option-group select{
+  background:var(--s3);border:1px solid var(--bdr);
+  border-radius:var(--radius-pill);padding:8px 14px;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--fg);
+  outline:none;cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  padding-right:32px;min-width:140px;
 }
 
-// Account functions
-function switchAccount() {
-    if (confirm('Switch to a different account? You will need to sign in again.')) {
-        signOut();
-        setTimeout(() => {
-            document.getElementById('login-screen').style.display = 'flex';
-        }, 100);
-    }
+.path-bar{
+  display:flex;align-items:center;gap:10px;
+  background:var(--s3);border:1px solid var(--bdr);
+  border-radius:var(--radius-pill);padding:9px 18px;
+  cursor:pointer;transition:border .2s;
 }
+.path-bar:hover{border-color:var(--red)}
+.path-text{flex:1;font-family:'DM Mono',monospace;font-size:12px;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-function logoutAndSwitch() {
-    signOut();
-    toast('Signed out. You can now log in with a different account.', 'info');
+.download-btn{
+  padding:14px 36px;border:none;border-radius:var(--radius-pill);
+  background:var(--red);color:#fff;
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  display:inline-flex;align-items:center;gap:10px;
 }
+.download-btn:hover{background:var(--redh);box-shadow:var(--glow);transform:translateY(-2px)}
 
-// Info Modal
-function showInfoModal() {
-    const modalHtml = `
-        <div class="modal-backdrop" id="info-modal-backdrop" style="display:flex" onclick="closeInfoModal(event)">
-            <div class="modal info-modal-content">
-                <h2>ℹ️ YouTube Downloader Desktop</h2>
-                <div class="info-section">
-                    <h3>📋 Features</h3>
-                    <p>✓ Download any YouTube video or playlist<br>
-                    ✓ Up to 4K quality with audio<br>
-                    ✓ Convert to MP3 / M4A audio only<br>
-                    ✓ Built-in FFmpeg for perfect merging<br>
-                    ✓ User accounts with history tracking<br>
-                    ✓ Native desktop application</p>
-                </div>
-                <div class="info-stats">
-                    <div class="stat-item"><div class="stat-number">∞</div><div class="stat-label">Unlimited</div></div>
-                    <div class="stat-item"><div class="stat-number">4K</div><div class="stat-label">Quality</div></div>
-                    <div class="stat-item"><div class="stat-number">✨</div><div class="stat-label">Free</div></div>
-                    <div class="stat-item"><div class="stat-number">🔒</div><div class="stat-label">Private</div></div>
-                </div>
-                <div class="info-section">
-                    <h3>🛠 Tech Stack</h3>
-                    <p>• yt-dlp - Download engine<br>• FFmpeg - Media processing<br>• Electron - Desktop framework<br>• Flask - Local server</p>
-                </div>
-                <button class="btn-main" style="margin-top:16px" onclick="closeInfoModal()">Close</button>
-            </div>
+.progress-wrap{margin:14px 0 6px}
+.progress-track{height:6px;background:var(--s3);border-radius:var(--radius-pill);overflow:hidden}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--red),var(--redh));border-radius:var(--radius-pill);transition:width .3s ease}
+.progress-meta{display:flex;justify-content:space-between;margin-top:6px}
+.progress-meta span{font-size:11px;color:var(--fg3)}
+
+.log-console{
+  background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--radius);
+  padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--fg3);height:110px;overflow-y:auto;margin-top:10px;
+}
+.log-console .log-success{color:var(--grn)}
+.log-console .log-error{color:var(--red)}
+
+.hist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hist-header h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.hist-item{
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:var(--radius);padding:14px 18px;margin-bottom:10px;
+  display:flex;align-items:center;gap:14px;
+}
+.hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.hist-dot.done{background:var(--grn)}
+.hist-dot.error{background:var(--red)}
+.hist-info{flex:1;min-width:0}
+.hist-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-meta{font-size:11px;color:var(--fg3);margin-top:3px}
+
+/* Desktop Settings */
+.account-switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.current-account-info{display:flex;align-items:baseline;gap:8px;background:var(--s3);padding:8px 16px;border-radius:var(--radius-pill)}
+.current-label{font-size:11px;color:var(--fg3)}
+.current-account-email{font-size:13px;font-weight:600;font-family:'DM Mono',monospace}
+.path-selector{display:flex;align-items:center;gap:12px;flex:1;justify-content:flex-end}
+.pill-btn.mini{padding:4px 12px;font-size:11px}
+.switch{position:relative;display:inline-block;width:44px;height:24px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--s4);transition:0.3s;border-radius:34px}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:0.3s;border-radius:50%}
+input:checked+.slider{background-color:var(--red)}
+input:checked+.slider:before{transform:translateX(20px)}
+.info-hub{position:fixed;bottom:20px;right:20px;z-index:100}
+.info-button{width:50px;height:50px;border-radius:50%;background:var(--red);color:white;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+.info-button:hover{transform:scale(1.1);background:var(--redh)}
+.info-modal-content{max-width:500px}
+.info-section{margin-bottom:20px;padding:12px;background:var(--s3);border-radius:var(--radius-sm)}
+.info-section h3{font-size:14px;margin-bottom:8px;color:var(--red)}
+.info-section p{font-size:12px;color:var(--fg2);line-height:1.5}
+.info-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+.stat-item{text-align:center;padding:12px;background:var(--card2);border-radius:var(--radius-sm)}
+.stat-number{font-size:24px;font-weight:700;color:var(--red)}
+.stat-label{font-size:11px;color:var(--fg3)}
+.dropdown{position:relative;display:inline-block}
+.dropdown-content{display:none;position:absolute;right:0;background-color:var(--card);min-width:180px;box-shadow:var(--shadow);border-radius:var(--radius-sm);border:1px solid var(--bdr);z-index:1}
+.dropdown-content a{color:var(--fg);padding:10px 16px;text-decoration:none;display:block;font-size:12px;cursor:pointer}
+.dropdown-content a:hover{background-color:var(--s3)}
+.dropdown:hover .dropdown-content{display:block}
+body.light-theme{--bg:#f5f5f5;--bg2:#ffffff;--card:#ffffff;--card2:#fafafa;--s3:#f0f0f0;--s4:#e8e8e8;--bdr:#e0e0e0;--fg:#1a1a1a;--fg2:#666;--fg3:#999}
+
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--card2);border:1px solid var(--bdr);border-radius:12px;padding:12px 18px;font-size:13px;box-shadow:var(--shadow)}
+.toast.success{border-color:var(--grn);color:var(--grn)}
+.toast.error{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#e63232"/>
+        <polygon points="25,16 25,48 50,32" fill="white"/>
+      </svg>
+      <div class="login-logo-text">
+        <h1>YouTube Downloader</h1>
+        <p>Desktop App · Free · Unlimited</p>
+      </div>
+    </div>
+    <div class="login-title" id="login-title">Sign in to your account</div>
+    <div class="field" id="field-name" style="display:none">
+      <label>Full Name</label>
+      <input type="text" id="inp-name" placeholder="Your name"/>
+    </div>
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="inp-email" placeholder="you@example.com"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="inp-pw" placeholder="••••••••"/>
+    </div>
+    <div class="field" id="field-cpw" style="display:none">
+      <label>Confirm Password</label>
+      <input type="password" id="inp-cpw" placeholder="••••••••"/>
+    </div>
+    <div class="err-msg" id="auth-err"></div>
+    <button class="btn-main" id="auth-btn" onclick="doAuth()">Sign In</button>
+    <div class="divider">or</div>
+    <button class="btn-google" onclick="showGoogleModal()">🔵 Continue with Google</button>
+    <div class="login-toggle">
+      <span id="toggle-text">Don't have an account?</span>
+      <a id="toggle-link" onclick="switchMode()"> Create one</a>
+    </div>
+  </div>
+</div>
+
+<!-- GOOGLE MODAL -->
+<div class="modal-backdrop" id="google-modal" style="display:none" onclick="closeGoogleModal(event)">
+  <div class="modal">
+    <h2>🔵 Continue with Google</h2>
+    <p>Enter your Gmail address</p>
+    <div class="field">
+      <label>Gmail Address</label>
+      <input type="email" id="google-email" placeholder="you@gmail.com"/>
+    </div>
+    <div class="err-msg" id="google-err"></div>
+    <button class="btn-main" onclick="doGoogleLogin()">Continue</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app">
+  <div class="header">
+    <div class="header-logo">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="14" fill="#e63232"/>
+        <polygon points="25,16 25,48 50,32" fill="white"/>
+      </svg>
+      <span>YouTube Downloader</span>
+    </div>
+    <div class="user-chip">
+      <div class="avatar" id="hdr-avatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="hdr-name">—</div>
+        <div class="user-email" id="hdr-email">—</div>
+      </div>
+      <button class="signout-btn" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tab-btn active" onclick="switchTab('download')">⬇ Download</button>
+    <button class="tab-btn" onclick="switchTab('history')">🕘 History</button>
+    <button class="tab-btn" onclick="switchTab('settings')">⚙ Settings</button>
+  </div>
+
+  <div class="pages">
+    <!-- DOWNLOAD PAGE -->
+    <div class="page active" id="page-download">
+      <div class="card">
+        <div class="card-label">YouTube Link</div>
+        <div class="url-row">
+          <input class="url-input" type="text" id="url-input" placeholder="Paste YouTube URL..." onkeydown="if(event.key==='Enter')startDownload()"/>
+          <button class="pill-btn" onclick="pasteURL()">📋 Paste</button>
         </div>
-    `;
-    const modalDiv = document.createElement('div');
-    modalDiv.innerHTML = modalHtml;
-    document.body.appendChild(modalDiv);
+      </div>
+      <div class="card">
+        <div class="card-label">Options</div>
+        <div class="options-grid">
+          <div class="option-group">
+            <label>Mode</label>
+            <select id="sel-mode"><option>Video</option><option>Audio Only</option><option>Playlist — Video</option><option>Playlist — Audio</option></select>
+          </div>
+          <div class="option-group">
+            <label>Quality</label>
+            <select id="sel-quality"><option>Best (Max Quality)</option><option>4K</option><option>1080p</option><option>720p</option><option>480p</option><option>360p</option></select>
+          </div>
+          <div class="option-group">
+            <label>Format</label>
+            <select id="sel-format"><option>mp4</option><option>mkv</option><option>webm</option><option>mp3</option><option>m4a</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="action-row">
+          <button class="download-btn" id="dl-btn" onclick="startDownload()">⬇ Download Now</button>
+          <button class="pill-btn outline" onclick="cancelDownload()">Cancel</button>
+        </div>
+        <div class="progress-wrap" id="prog-wrap" style="display:none">
+          <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+          <div class="progress-meta"><span id="prog-pct">0%</span><span id="prog-speed">—</span><span id="prog-eta">ETA —</span></div>
+        </div>
+        <div class="status-text" id="status-txt">Ready to download</div>
+        <div class="log-console" id="log-console">Waiting for a download…</div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="hist-header"><h2>Download History</h2><button class="pill-btn outline" onclick="clearHistory()">🗑 Clear All</button></div>
+      <div id="hist-list"><div class="hist-empty">No downloads yet.</div></div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="card settings-section">
+        <div class="card-label">Account Management</div>
+        <div class="account-switch-row">
+          <div class="current-account-info"><span class="current-label">Current:</span><span class="current-account-email" id="current-account-email">-</span></div>
+          <button class="pill-btn outline" onclick="switchAccount()">🔄 Switch Account</button>
+          <button class="pill-btn outline" onclick="logoutAndSwitch()">👤 Login as Different User</button>
+        </div>
+      </div>
+
+      <div class="card settings-section" id="desktop-settings" style="display:none">
+        <div class="card-label">Desktop Application</div>
+        <div class="sys-row"><span class="key">📁 Download Folder</span><div class="path-selector"><span class="val" id="desktop-download-path">-</span><button class="pill-btn mini" onclick="changeDownloadFolder()">Change</button></div></div>
+        <div class="sys-row"><span class="key">🎨 Theme</span><select id="theme-selector" onchange="changeTheme()"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System Default</option></select></div>
+        <div class="sys-row"><span class="key">💾 Remember Settings</span><label class="switch"><input type="checkbox" id="remember-settings" onchange="toggleRememberSettings()"><span class="slider"></span></label></div>
+        <div class="sys-row"><span class="key">📦 App Version</span><span class="val" id="app-version">-</span><button class="pill-btn mini" onclick="checkAppUpdate()">Check Update</button></div>
+      </div>
+
+      <div class="card settings-section">
+        <div class="card-label">System</div>
+        <div class="sys-row"><span class="key">FFmpeg</span><span class="badge badge-green">✓ Ready</span></div>
+        <div class="sys-row"><span class="key">yt-dlp version</span><span class="val" id="ytdlp-ver">loading…</span></div>
+        <button class="pill-btn" style="margin-top:10px" onclick="updateYtdlp()">🔄 Update yt-dlp</button>
+        <div class="update-result" id="update-result" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+</div>
+
+<script>
+let _user = null;
+let _mode = 'login';
+let _job = null;
+let _downloading = false;
+
+const DEFAULT_PATH = '~/Downloads';
+
+function switchMode(){
+  _mode = _mode === 'login' ? 'register' : 'login';
+  const isReg = _mode === 'register';
+  document.getElementById('login-title').textContent = isReg ? 'Create account' : 'Sign in';
+  document.getElementById('auth-btn').textContent = isReg ? 'Create Account' : 'Sign In';
+  document.getElementById('toggle-text').textContent = isReg ? 'Already have an account?' : "Don't have an account?";
+  document.getElementById('toggle-link').textContent = isReg ? ' Sign in' : ' Create one';
+  document.getElementById('field-name').style.display = isReg ? '' : 'none';
+  document.getElementById('field-cpw').style.display = isReg ? '' : 'none';
+  setErr('');
 }
 
-function closeInfoModal(e) {
-    if (!e || e.target.id === 'info-modal-backdrop' || !e) {
-        const modal = document.getElementById('info-modal-backdrop');
-        if (modal) modal.remove();
+function setErr(msg){ const e=document.getElementById('auth-err'); e.textContent=msg; e.className='err-msg'+(msg?' show':''); }
+
+async function doAuth(){
+  setErr('');
+  const email = document.getElementById('inp-email').value.trim().toLowerCase();
+  const pw = document.getElementById('inp-pw').value;
+  if(!email || !email.includes('@')){ setErr('Valid email required'); return; }
+  if(!pw){ setErr('Enter password'); return; }
+
+  if(_mode === 'register'){
+    const name = document.getElementById('inp-name').value.trim();
+    const cpw = document.getElementById('inp-cpw').value;
+    if(!name){ setErr('Enter your name'); return; }
+    if(pw.length < 6){ setErr('Password min 6 characters'); return; }
+    if(pw !== cpw){ setErr('Passwords do not match'); return; }
+    const r = await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw,name})});
+    const d = await r.json();
+    if(!r.ok){ setErr(d.error); return; }
+    launchApp(d);
+  } else {
+    const r = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+    const d = await r.json();
+    if(!r.ok){ setErr(d.error); return; }
+    launchApp(d);
+  }
+}
+
+function showGoogleModal(){ document.getElementById('google-modal').style.display='flex'; }
+function closeGoogleModal(e){ if(e.target===document.getElementById('google-modal')) document.getElementById('google-modal').style.display='none'; }
+
+async function doGoogleLogin(){
+  const email = document.getElementById('google-email').value.trim().toLowerCase();
+  const err = document.getElementById('google-err');
+  if(!email||!email.includes('@')){ err.textContent='Valid email required'; err.className='err-msg show'; return; }
+  const r = await fetch('/api/google-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+  const d = await r.json();
+  if(!r.ok){ err.textContent=d.error; err.className='err-msg show'; return; }
+  document.getElementById('google-modal').style.display='none';
+  launchApp(d);
+}
+
+function launchApp(user){
+  _user = user;
+  localStorage.setItem('ytdl_user', JSON.stringify(user));
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').classList.add('visible');
+  document.getElementById('hdr-avatar').textContent = user.name[0].toUpperCase();
+  document.getElementById('hdr-name').textContent = user.name;
+  document.getElementById('hdr-email').textContent = user.email.length>28 ? user.email.slice(0,28)+'…' : user.email;
+  document.getElementById('current-account-email').textContent = user.email;
+  loadYtdlpVer();
+  loadHistory();
+  addUserDropdown();
+}
+
+function signOut(){
+  _user = null;
+  localStorage.removeItem('ytdl_user');
+  document.getElementById('main-app').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+}
+
+function switchTab(name){
+  ['download','history','settings'].forEach(t=>{
+    document.getElementById('tab-'+t).className = 'tab-btn'+(t===name?' active':'');
+    document.getElementById('page-'+t).className = 'page'+(t===name?' active':'');
+  });
+  if(name==='history') loadHistory();
+}
+
+function pasteURL(){ navigator.clipboard.readText().then(t=>document.getElementById('url-input').value=t.trim()).catch(()=>toast('Cannot read clipboard','error')); }
+function setStatus(msg){ document.getElementById('status-txt').textContent = msg; }
+function appendLog(text, type){ const c=document.getElementById('log-console'); const d=document.createElement('div'); d.className=type?'log-'+type:''; d.textContent=text; c.appendChild(d); c.scrollTop=c.scrollHeight; }
+function clearLog(){ document.getElementById('log-console').innerHTML=''; }
+function setProgress(pct, speed, eta){ document.getElementById('prog-fill').style.width=pct+'%'; document.getElementById('prog-pct').textContent=pct.toFixed(1)+'%'; if(speed)document.getElementById('prog-speed').textContent=speed; if(eta)document.getElementById('prog-eta').textContent='ETA '+eta; }
+
+async function startDownload(){
+  if(_downloading) return;
+  const url = document.getElementById('url-input').value.trim();
+  if(!url){ toast('Paste a YouTube URL','error'); return; }
+  _downloading=true; document.getElementById('dl-btn').disabled=true;
+  document.getElementById('prog-wrap').style.display=''; clearLog(); setProgress(0,'',''); setStatus('Starting...');
+  const body = {url, mode:document.getElementById('sel-mode').value, quality:document.getElementById('sel-quality').value, format:document.getElementById('sel-format').value, path:'', user:_user?.email||''};
+  const r = await fetch('/api/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d = await r.json();
+  if(!r.ok){ setStatus(d.error); _downloading=false; document.getElementById('dl-btn').disabled=false; return; }
+  const es = new EventSource('/api/progress/'+d.job_id); _job=es;
+  es.onmessage = e => {
+    const p = JSON.parse(e.data);
+    if(p.new_logs) p.new_logs.forEach(l=>appendLog(l.text,l.type));
+    if(p.progress!==undefined) setProgress(p.progress,p.speed,p.eta);
+    if(p.done){ es.close(); _job=null; _downloading=false; document.getElementById('dl-btn').disabled=false; setStatus(p.status==='done'?'Complete!':'Failed'); if(p.status==='done'){ toast('Download complete!','success'); loadHistory(); } }
+  };
+}
+
+function cancelDownload(){ if(_job){ _job.close(); _job=null; } _downloading=false; document.getElementById('dl-btn').disabled=false; document.getElementById('prog-wrap').style.display='none'; setStatus('Cancelled'); }
+
+async function loadHistory(){
+  if(!_user) return;
+  const r = await fetch('/api/history?user='+encodeURIComponent(_user.email));
+  const items = await r.json();
+  const el = document.getElementById('hist-list');
+  if(!items.length){ el.innerHTML='<div class="hist-empty">No downloads yet.</div>'; return; }
+  el.innerHTML='';
+  [...items].reverse().forEach(item=>{
+    const div = document.createElement('div'); div.className='hist-item';
+    div.innerHTML=`<div class="hist-dot ${item.status==='done'?'done':'error'}"></div><div class="hist-info"><div class="hist-title">${escapeHtml(item.title||item.url)}</div><div class="hist-meta">${item.mode} · ${item.quality} · ${item.date}</div></div><div class="hist-actions"><button class="pill-btn outline" onclick="reDownload('${escapeHtml(item.url)}')">↺ Redownload</button></div>`;
+    el.appendChild(div);
+  });
+}
+function reDownload(url){ document.getElementById('url-input').value=url; switchTab('download'); }
+async function clearHistory(){ if(confirm('Clear all history?')){ await fetch('/api/history/clear?user='+encodeURIComponent(_user.email),{method:'DELETE'}); loadHistory(); toast('History cleared','info'); } }
+async function loadYtdlpVer(){ try{ const r=await fetch('/api/ytdlp-version'); const d=await r.json(); document.getElementById('ytdlp-ver').textContent='v'+d.version; }catch{} }
+async function updateYtdlp(){ const btn=event.currentTarget; btn.textContent='Updating...'; btn.disabled=true; const r=await fetch('/api/update-ytdlp',{method:'POST'}); const d=await r.json(); const el=document.getElementById('update-result'); el.textContent=d.message; el.style.display='block'; setTimeout(()=>el.style.display='none',3000); btn.textContent='🔄 Update yt-dlp'; btn.disabled=false; if(d.ok) loadYtdlpVer(); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function toast(msg,type){ const c=document.getElementById('toast-container'); const t=document.createElement('div'); t.className='toast '+type; t.textContent=msg; c.appendChild(t); setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); },3000); }
+
+// Desktop functions
+async function initDesktopFeatures(){
+  if(!window.electronAPI || !window.electronAPI.isElectron){ console.log('Browser mode'); return; }
+  document.getElementById('desktop-settings').style.display='block';
+  try{
+    const settings = await window.electronAPI.getSettings();
+    if(settings.downloadPath) document.getElementById('desktop-download-path').textContent = settings.downloadPath;
+    if(settings.theme){
+      document.getElementById('theme-selector').value = settings.theme;
+      if(settings.theme==='light') document.body.classList.add('light-theme');
     }
+    const version = await window.electronAPI.getAppVersion();
+    document.getElementById('app-version').textContent = `v${version}`;
+  }catch(e){}
 }
 
-// Desktop settings functions
-function changeDownloadFolder() {
-    if (window.electronAPI && window.electronAPI.selectDownloadFolder) {
-        window.electronAPI.selectDownloadFolder().then(newPath => {
-            if (newPath) {
-                document.getElementById('desktop-download-path').textContent = newPath;
-                toast('Download folder updated!', 'success');
-            }
-        });
-    } else {
-        toast('This feature is only available in desktop mode', 'info');
-    }
+function addUserDropdown(){
+  const chip = document.querySelector('.user-chip');
+  if(!chip || chip.parentElement.classList.contains('dropdown')) return;
+  const dropdown = document.createElement('div'); dropdown.className='dropdown'; dropdown.style.position='relative';
+  const content = document.createElement('div'); content.className='dropdown-content';
+  content.innerHTML = `<a onclick="switchAccount()">🔄 Switch Account</a><a onclick="showInfoModal()">ℹ️ About</a><a onclick="window.open('https://github.com','_blank')">⭐ Star on GitHub</a>`;
+  chip.parentNode.insertBefore(dropdown, chip);
+  dropdown.appendChild(chip);
+  dropdown.appendChild(content);
 }
 
-function changeTheme() {
-    const theme = document.getElementById('theme-selector').value;
-    if (theme === 'light') {
-        document.body.classList.add('light-theme');
-    } else if (theme === 'dark') {
-        document.body.classList.remove('light-theme');
-    } else if (theme === 'system') {
-        const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (darkMode) {
-            document.body.classList.remove('light-theme');
-        } else {
-            document.body.classList.add('light-theme');
-        }
-    }
-    
-    if (window.electronAPI) {
-        window.electronAPI.saveSettings({ theme: theme });
-    }
+function switchAccount(){ if(confirm('Switch account?')){ signOut(); setTimeout(()=>document.getElementById('login-screen').style.display='flex',100); } }
+function logoutAndSwitch(){ signOut(); toast('Signed out','info'); }
+function showInfoModal(){
+  const html = `<div class="modal-backdrop" id="info-modal" style="display:flex" onclick="closeInfoModal(event)"><div class="modal info-modal-content"><h2>ℹ️ YouTube Downloader Desktop</h2><div class="info-section"><h3>📋 Features</h3><p>✓ 4K Quality<br>✓ Audio MP3/M4A<br>✓ Playlists<br>✓ Accounts & History</p></div><div class="info-stats"><div class="stat-item"><div class="stat-number">∞</div><div class="stat-label">Unlimited</div></div><div class="stat-item"><div class="stat-number">4K</div><div class="stat-label">Quality</div></div></div><button class="btn-main" onclick="closeInfoModal()">Close</button></div></div>`;
+  const div=document.createElement('div'); div.innerHTML=html; document.body.appendChild(div);
 }
+function closeInfoModal(e){ if(!e || e.target.id==='info-modal') document.getElementById('info-modal')?.remove(); }
+function changeDownloadFolder(){ if(window.electronAPI) window.electronAPI.selectDownloadFolder().then(p=>{ if(p){ document.getElementById('desktop-download-path').textContent=p; toast('Folder updated','success'); } }); }
+function changeTheme(){ const theme=document.getElementById('theme-selector').value; if(theme==='light') document.body.classList.add('light-theme'); else document.body.classList.remove('light-theme'); if(window.electronAPI) window.electronAPI.saveSettings({theme}); }
+function toggleRememberSettings(){ if(window.electronAPI) window.electronAPI.saveSettings({rememberSettings:document.getElementById('remember-settings').checked}); }
+function checkAppUpdate(){ window.open('https://github.com','_blank'); toast('Check GitHub for updates','info'); }
 
-function toggleRememberSettings() {
-    const remember = document.getElementById('remember-settings').checked;
-    if (window.electronAPI) {
-        window.electronAPI.saveSettings({ rememberSettings: remember });
-    }
-}
-
-function toggleAutoUpdate() {
-    const autoUpdate = document.getElementById('auto-update').checked;
-    if (window.electronAPI) {
-        window.electronAPI.saveSettings({ autoUpdate: autoUpdate });
-    }
-}
-
-function checkAppUpdate() {
-    window.open('https://github.com/yourusername/youtube-downloader-desktop/releases', '_blank');
-    toast('Check GitHub for updates', 'info');
-}
-
-// Override launchApp to add desktop features
-const originalLaunchApp = window.launchApp;
-if (originalLaunchApp) {
-    window.launchApp = function(user) {
-        originalLaunchApp(user);
-        addUserDropdown();
-        const emailEl = document.getElementById('current-account-email');
-        if (emailEl) emailEl.textContent = user.email;
-    };
-}
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    initDesktopFeatures();
+document.addEventListener('DOMContentLoaded',()=>{
+  const saved = localStorage.getItem('ytdl_user');
+  if(saved){ try{ launchApp(JSON.parse(saved)); }catch{} }
+  initDesktopFeatures();
 });
+</script>
+</body>
+</html>

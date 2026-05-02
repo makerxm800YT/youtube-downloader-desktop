@@ -1,3 +1,42 @@
+const { autoUpdater } = require('electron-updater');
+const { dialog } = require('electron');
+
+// Auto-updater configuration
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+// Check for updates on startup
+autoUpdater.checkForUpdatesAndNotify();
+
+// Update events
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available:', info.version);
+  dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'Update Available',
+    message: `Version ${info.version} is available. Downloading in background...`,
+    buttons: ['OK']
+  });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('Update downloaded:', info.version);
+  dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'Update Ready',
+    message: `Version ${info.version} has been downloaded. Restart to install?`,
+    buttons: ['Restart Now', 'Later'],
+    defaultId: 0
+  }).then((result) => {
+    if (result.response === 0) {
+      autoUpdater.quitAndInstall();
+    }
+  });
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('Update error:', err);
+});
 const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');

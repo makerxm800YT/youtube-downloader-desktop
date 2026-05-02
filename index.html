@@ -61,7 +61,8 @@
         <button class="info-button" id="info-button" onclick="showInfoModal()">
           ℹ️ About & Info
         </button>
-      </div>
+     </div>
+<style>
 /* Add to existing CSS */
 
 /* Account Switching */
@@ -276,4 +277,149 @@ body.light-theme {
   --fg: #1a1a1a;
   --fg2: #666666;
   --fg3: #999999;
+}
+// Account switching functions
+function switchAccount() {
+    if (confirm('Switch to a different account? You will need to sign in again.')) {
+        signOut();
+        setTimeout(() => {
+            document.getElementById('login-screen').style.display = 'flex';
+        }, 100);
+    }
+}
+
+function logoutAndSwitch() {
+    signOut();
+    toast('Signed out. You can now log in with a different account.', 'info');
+}
+<script>
+
+// Info Modal
+function showInfoModal() {
+    const modalHtml = `
+        <div class="modal-backdrop" id="info-modal-backdrop" style="display:flex" onclick="closeInfoModal(event)">
+            <div class="modal info-modal-content">
+                <h2>ℹ️ About YouTube Downloader</h2>
+                <div class="info-section">
+                    <h3>📋 Features</h3>
+                    <p>✓ Download any YouTube video or playlist<br>✓ Up to 4K quality with audio<br>✓ Convert to MP3 / M4A audio only<br>✓ Built-in FFmpeg for perfect merging<br>✓ User accounts with history tracking</p>
+                </div>
+                <div class="info-stats">
+                    <div class="stat-item"><div class="stat-number">∞</div><div class="stat-label">Unlimited Downloads</div></div>
+                    <div class="stat-item"><div class="stat-number">4K</div><div class="stat-label">Max Quality</div></div>
+                    <div class="stat-item"><div class="stat-number">✨</div><div class="stat-label">Free Forever</div></div>
+                    <div class="stat-item"><div class="stat-number">🔒</div><div class="stat-label">Private & Local</div></div>
+                </div>
+                <button class="btn-main" style="margin-top:16px" onclick="closeInfoModal()">Close</button>
+            </div>
+        </div>
+    `;
+    const modalDiv = document.createElement('div');
+    modalDiv.innerHTML = modalHtml;
+    document.body.appendChild(modalDiv);
+}
+
+function closeInfoModal(e) {
+    if (!e || e.target.id === 'info-modal-backdrop' || !e) {
+        const modal = document.getElementById('info-modal-backdrop');
+        if (modal) modal.remove();
+    }
+}
+
+// Desktop functions (for Electron app)
+function changeDownloadFolder() {
+    if (window.electronAPI && window.electronAPI.selectDownloadFolder) {
+        window.electronAPI.selectDownloadFolder().then(newPath => {
+            if (newPath) {
+                document.getElementById('desktop-download-path').textContent = newPath;
+                toast('Download folder updated!', 'success');
+            }
+        });
+    } else {
+        toast('This feature is only available in the desktop app', 'info');
+    }
+}
+
+function changeTheme() {
+    const theme = document.getElementById('theme-selector').value;
+    if (theme === 'light') {
+        document.body.classList.add('light-theme');
+    } else if (theme === 'dark') {
+        document.body.classList.remove('light-theme');
+    } else if (theme === 'system') {
+        const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (darkMode) {
+            document.body.classList.remove('light-theme');
+        } else {
+            document.body.classList.add('light-theme');
+        }
+    }
+}
+
+function toggleRememberSettings() {
+    const remember = document.getElementById('remember-settings').checked;
+    if (window.electronAPI && window.electronAPI.saveSettings) {
+        window.electronAPI.saveSettings({ rememberQuality: remember });
+    }
+}
+
+function toggleAutoUpdate() {
+    const autoUpdate = document.getElementById('auto-update').checked;
+    if (window.electronAPI && window.electronAPI.saveSettings) {
+        window.electronAPI.saveSettings({ autoUpdate });
+    }
+}
+
+function checkAppUpdate() {
+    window.open('https://github.com/yourrepo/youtube-downloader/releases', '_blank');
+    toast('Check GitHub for updates', 'info');
+}
+
+// Add dropdown to user chip
+function addUserDropdown() {
+    const userChip = document.querySelector('.user-chip');
+    if (!userChip) return;
+    
+    const dropdown = document.createElement('div');
+    dropdown.className = 'dropdown';
+    dropdown.style.position = 'relative';
+    
+    const dropdownContent = document.createElement('div');
+    dropdownContent.className = 'dropdown-content';
+    dropdownContent.innerHTML = `
+        <a onclick="switchAccount()">🔄 Switch Account</a>
+        <a onclick="showInfoModal()">ℹ️ About & Info</a>
+        <a onclick="window.open('https://github.com', '_blank')">⭐ Star on GitHub</a>
+    `;
+    
+    userChip.parentNode.insertBefore(dropdown, userChip);
+    dropdown.appendChild(userChip);
+    dropdown.appendChild(dropdownContent);
+}
+
+// Override launchApp to add dropdown
+const originalLaunchAppForDropdown = window.launchApp;
+if (originalLaunchAppForDropdown) {
+    window.launchApp = function(user) {
+        originalLaunchAppForDropdown(user);
+        addUserDropdown();
+        const emailEl = document.getElementById('current-account-email');
+        if (emailEl) emailEl.textContent = user.email;
+    };
+}
+
+// Check if in Electron and show desktop settings
+if (window.electronAPI && window.electronAPI.isElectron) {
+    document.getElementById('desktop-settings').style.display = 'block';
+    window.electronAPI.getSettings().then(settings => {
+        if (settings) {
+            document.getElementById('desktop-download-path').textContent = settings.downloadPath || '~/Downloads';
+            document.getElementById('theme-selector').value = settings.theme || 'dark';
+            document.getElementById('remember-settings').checked = settings.rememberQuality !== false;
+            document.getElementById('auto-update').checked = settings.autoUpdate !== false;
+        }
+    });
+    window.electronAPI.getAppVersion().then(version => {
+        document.getElementById('app-version').textContent = `v${version}`;
+    });
 }

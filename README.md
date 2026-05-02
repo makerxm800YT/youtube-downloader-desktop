@@ -1,49 +1,55 @@
-# 🎬 YouTube Downloader
+# 🎬 YouTube Downloader Desktop
 
 <p align="center">
   <img src="favicon.svg" width="100" alt="Logo"/>
 </p>
 
 <p align="center">
-  <strong>A beautiful, modern YouTube video downloader with accounts, history, and desktop app support</strong>
+  <strong>A powerful, native desktop application for downloading YouTube videos</strong>
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#desktop-app">Desktop App</a> •
-  <a href="#screenshots">Screenshots</a> •
-  <a href="#license">License</a>
+  <strong>Free • Unlimited • 4K Quality • Audio Support • No Ads</strong>
 </p>
 
 ---
 
 ## ✨ Features
 
-| | Feature | Description |
-|---|---|---|
-| 🔐 | **User Accounts** | Email/Password or Google sign-in with persistent history |
-| ⬇️ | **Max Quality** | Download up to 4K with perfect audio-video sync |
-| 🔊 | **Audio Only** | Extract MP3/M4A at 320kbps quality |
-| 📋 | **Playlist Support** | Download entire playlists in one click |
-| 🕘 | **Download History** | Track all downloads and re-download anytime |
-| 🖥️ | **Desktop App** | Native Electron app with system integration |
-| 🎨 | **Dark/Light Theme** | Eye-friendly interface with theme switching |
-| 🔄 | **Account Switching** | Easily switch between multiple accounts |
-| ⭐ | **Rate System** | Built-in rating and feedback system |
-| 🔧 | **Self-Updating** | Update yt-dlp directly from the app |
+| Feature | Description |
+|---------|-------------|
+| 🖥️ **Native App** | Runs as a real desktop application |
+| 🔐 **User Accounts** | Email or Google sign-in with download history |
+| ⬇️ **Max Quality** | Up to 4K with perfect audio sync |
+| 🔊 **Audio Only** | Extract MP3/M4A at 320kbps |
+| 📋 **Playlists** | Download entire playlists in one click |
+| 🕘 **History** | Track all your downloads |
+| 🔄 **Account Switching** | Multiple accounts support |
+| 🎨 **Dark/Light Theme** | Choose your preferred look |
+| 📁 **Custom Folder** | Choose where to save videos |
+| 🔧 **Self-Updating** | Update yt-dlp from within the app |
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Install
 
-### Option 1: Web Version (Python)
+### Download Executable
 
-**Windows (2 steps):**
-1. Install Python from [python.org](https://python.org) (check "Add Python to PATH")
-2. Double-click `START - Click Here.bat`
+| Platform | Download |
+|----------|----------|
+| **Windows** | [YouTube Downloader Setup.exe](https://github.com/yourusername/youtube-downloader-desktop/releases) |
+| **macOS** | [YouTube Downloader.dmg](https://github.com/yourusername/youtube-downloader-desktop/releases) |
+| **Linux** | [YouTube Downloader.AppImage](https://github.com/yourusername/youtube-downloader-desktop/releases) |
 
-**Mac / Linux:**
+### Run from Source
+
 ```bash
-pip install flask yt-dlp static-ffmpeg
-python app.py
+# Clone the repository
+git clone https://github.com/yourusername/youtube-downloader-desktop
+cd youtube-downloader-desktop
+
+# Install dependencies
+npm install
+
+# Run the app
+npm start

@@ -1,271 +1,77 @@
-<!-- Add after the rate-card div in settings page -->
-      
-<!-- Account Switching -->
-<div class="card settings-section">
-  <div class="card-label">Account Management</div>
-  <div class="account-switch-row">
-    <div class="current-account-info">
-      <span class="current-label">Current Account:</span>
-      <span class="current-account-email" id="current-account-email">-</span>
-    </div>
-    <button class="pill-btn outline" onclick="switchAccount()">
-      🔄 Switch Account
-    </button>
-    <button class="pill-btn outline" onclick="logoutAndSwitch()">
-      👤 Login as Different User
-    </button>
-  </div>
-</div>
+// ============ DESKTOP APP INITIALIZATION ============
+// This replaces the web version code
 
-<!-- Desktop App Settings -->
-<div class="card settings-section" id="desktop-settings" style="display:none">
-  <div class="card-label">Desktop Application</div>
-  <div class="sys-row">
-    <span class="key">📁 Download Folder</span>
-    <div class="path-selector">
-      <span class="val" id="desktop-download-path">-</span>
-      <button class="pill-btn mini" onclick="changeDownloadFolder()">Change</button>
-    </div>
-  </div>
-  <div class="sys-row">
-    <span class="key">🎨 Theme</span>
-    <select id="theme-selector" onchange="changeTheme()">
-      <option value="dark">Dark</option>
-      <option value="light">Light</option>
-      <option value="system">System Default</option>
-    </select>
-  </div>
-  <div class="sys-row">
-    <span class="key">💾 Remember Settings</span>
-    <label class="switch">
-      <input type="checkbox" id="remember-settings" onchange="toggleRememberSettings()">
-      <span class="slider"></span>
-    </label>
-  </div>
-  <div class="sys-row">
-    <span class="key">🔄 Auto-check Updates</span>
-    <label class="switch">
-      <input type="checkbox" id="auto-update" onchange="toggleAutoUpdate()">
-      <span class="slider"></span>
-    </label>
-  </div>
-  <div class="sys-row">
-    <span class="key">📦 App Version</span>
-    <span class="val" id="app-version">-</span>
-    <button class="pill-btn mini" onclick="checkAppUpdate()">Check Update</button>
-  </div>
-</div>
-
-<!-- Info Hub Button -->
-<div class="info-hub">
-  <button class="info-button" id="info-button" onclick="showInfoModal()">
-    ℹ️ About & Info
-  </button>
-</div>
-
-<style>
-/* Add to existing CSS */
-
-/* Account Switching */
-.account-switch-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.current-account-info {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  background: var(--s3);
-  padding: 8px 16px;
-  border-radius: var(--radius-pill);
-}
-.current-label {
-  font-size: 11px;
-  color: var(--fg3);
-}
-.current-account-email {
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'DM Mono', monospace;
+// Initialize desktop features
+async function initDesktopFeatures() {
+    if (!window.electronAPI || !window.electronAPI.isElectron) {
+        console.log('Running in browser mode');
+        return;
+    }
+    
+    console.log('Running in Desktop mode');
+    
+    // Show desktop settings
+    const desktopSettings = document.getElementById('desktop-settings');
+    if (desktopSettings) desktopSettings.style.display = 'block';
+    
+    // Load saved settings
+    try {
+        const settings = await window.electronAPI.getSettings();
+        if (settings) {
+            if (settings.downloadPath) {
+                document.getElementById('desktop-download-path').textContent = settings.downloadPath;
+            }
+            if (settings.theme) {
+                document.getElementById('theme-selector').value = settings.theme;
+                if (settings.theme === 'light') document.body.classList.add('light-theme');
+            }
+            if (settings.rememberSettings) {
+                document.getElementById('remember-settings').checked = settings.rememberSettings;
+            }
+            if (settings.autoUpdate) {
+                document.getElementById('auto-update').checked = settings.autoUpdate;
+            }
+        }
+    } catch (e) { console.error('Error loading settings:', e); }
+    
+    // Get app version
+    try {
+        const version = await window.electronAPI.getAppVersion();
+        document.getElementById('app-version').textContent = `v${version}`;
+    } catch (e) {}
 }
 
-/* Desktop Settings */
-.path-selector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  justify-content: flex-end;
-}
-.pill-btn.mini {
-  padding: 4px 12px;
-  font-size: 11px;
-}
-
-/* Toggle Switch */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-}
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--s4);
-  transition: 0.3s;
-  border-radius: 34px;
-}
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-input:checked + .slider {
-  background-color: var(--red);
-}
-input:checked + .slider:before {
-  transform: translateX(20px);
+// Add dropdown menu to user chip
+function addUserDropdown() {
+    const userChip = document.querySelector('.user-chip');
+    if (!userChip) return;
+    
+    // Check if dropdown already exists
+    if (userChip.parentElement.classList.contains('dropdown')) return;
+    
+    const dropdown = document.createElement('div');
+    dropdown.className = 'dropdown';
+    dropdown.style.position = 'relative';
+    
+    const dropdownContent = document.createElement('div');
+    dropdownContent.className = 'dropdown-content';
+    dropdownContent.innerHTML = `
+        <a onclick="switchAccount()">🔄 Switch Account</a>
+        <a onclick="showInfoModal()">ℹ️ About & Info</a>
+        <a onclick="window.open('https://github.com', '_blank')">⭐ Star on GitHub</a>
+        <a onclick="openSettings()">⚙️ Preferences</a>
+    `;
+    
+    userChip.parentNode.insertBefore(dropdown, userChip);
+    dropdown.appendChild(userChip);
+    dropdown.appendChild(dropdownContent);
 }
 
-/* Info Hub */
-.info-hub {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 100;
-}
-.info-button {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: var(--red);
-  color: white;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.info-button:hover {
-  transform: scale(1.1);
-  background: var(--redh);
-  box-shadow: var(--glow);
+function openSettings() {
+    switchTab('settings');
 }
 
-/* Info Modal */
-.info-modal-content {
-  max-width: 500px;
-}
-.info-section {
-  margin-bottom: 20px;
-  padding: 12px;
-  background: var(--s3);
-  border-radius: var(--radius-sm);
-}
-.info-section h3 {
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: var(--red);
-}
-.info-section p {
-  font-size: 12px;
-  color: var(--fg2);
-  line-height: 1.5;
-}
-.info-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 12px;
-}
-.stat-item {
-  text-align: center;
-  padding: 12px;
-  background: var(--card2);
-  border-radius: var(--radius-sm);
-}
-.stat-number {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--red);
-}
-.stat-label {
-  font-size: 11px;
-  color: var(--fg3);
-  margin-top: 4px;
-}
-
-/* Dropdown Menu */
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  background-color: var(--card);
-  min-width: 200px;
-  box-shadow: var(--shadow);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--bdr);
-  z-index: 1;
-}
-.dropdown-content a {
-  color: var(--fg);
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.dropdown-content a:hover {
-  background-color: var(--s3);
-}
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-/* Light theme */
-body.light-theme {
-  --bg: #f5f5f5;
-  --bg2: #ffffff;
-  --card: #ffffff;
-  --card2: #fafafa;
-  --s3: #f0f0f0;
-  --s4: #e8e8e8;
-  --bdr: #e0e0e0;
-  --fg: #1a1a1a;
-  --fg2: #666666;
-  --fg3: #999999;
-}
-</style>
-
-<script>
-// Account switching functions
+// Account functions
 function switchAccount() {
     if (confirm('Switch to a different account? You will need to sign in again.')) {
         signOut();
@@ -285,16 +91,25 @@ function showInfoModal() {
     const modalHtml = `
         <div class="modal-backdrop" id="info-modal-backdrop" style="display:flex" onclick="closeInfoModal(event)">
             <div class="modal info-modal-content">
-                <h2>ℹ️ About YouTube Downloader</h2>
+                <h2>ℹ️ YouTube Downloader Desktop</h2>
                 <div class="info-section">
                     <h3>📋 Features</h3>
-                    <p>✓ Download any YouTube video or playlist<br>✓ Up to 4K quality with audio<br>✓ Convert to MP3 / M4A audio only<br>✓ Built-in FFmpeg for perfect merging<br>✓ User accounts with history tracking</p>
+                    <p>✓ Download any YouTube video or playlist<br>
+                    ✓ Up to 4K quality with audio<br>
+                    ✓ Convert to MP3 / M4A audio only<br>
+                    ✓ Built-in FFmpeg for perfect merging<br>
+                    ✓ User accounts with history tracking<br>
+                    ✓ Native desktop application</p>
                 </div>
                 <div class="info-stats">
-                    <div class="stat-item"><div class="stat-number">∞</div><div class="stat-label">Unlimited Downloads</div></div>
-                    <div class="stat-item"><div class="stat-number">4K</div><div class="stat-label">Max Quality</div></div>
-                    <div class="stat-item"><div class="stat-number">✨</div><div class="stat-label">Free Forever</div></div>
-                    <div class="stat-item"><div class="stat-number">🔒</div><div class="stat-label">Private & Local</div></div>
+                    <div class="stat-item"><div class="stat-number">∞</div><div class="stat-label">Unlimited</div></div>
+                    <div class="stat-item"><div class="stat-number">4K</div><div class="stat-label">Quality</div></div>
+                    <div class="stat-item"><div class="stat-number">✨</div><div class="stat-label">Free</div></div>
+                    <div class="stat-item"><div class="stat-number">🔒</div><div class="stat-label">Private</div></div>
+                </div>
+                <div class="info-section">
+                    <h3>🛠 Tech Stack</h3>
+                    <p>• yt-dlp - Download engine<br>• FFmpeg - Media processing<br>• Electron - Desktop framework<br>• Flask - Local server</p>
                 </div>
                 <button class="btn-main" style="margin-top:16px" onclick="closeInfoModal()">Close</button>
             </div>
@@ -312,7 +127,7 @@ function closeInfoModal(e) {
     }
 }
 
-// Desktop functions (for Electron app)
+// Desktop settings functions
 function changeDownloadFolder() {
     if (window.electronAPI && window.electronAPI.selectDownloadFolder) {
         window.electronAPI.selectDownloadFolder().then(newPath => {
@@ -322,7 +137,7 @@ function changeDownloadFolder() {
             }
         });
     } else {
-        toast('This feature is only available in the desktop app', 'info');
+        toast('This feature is only available in desktop mode', 'info');
     }
 }
 
@@ -340,73 +155,43 @@ function changeTheme() {
             document.body.classList.add('light-theme');
         }
     }
+    
+    if (window.electronAPI) {
+        window.electronAPI.saveSettings({ theme: theme });
+    }
 }
 
 function toggleRememberSettings() {
     const remember = document.getElementById('remember-settings').checked;
-    if (window.electronAPI && window.electronAPI.saveSettings) {
-        window.electronAPI.saveSettings({ rememberQuality: remember });
+    if (window.electronAPI) {
+        window.electronAPI.saveSettings({ rememberSettings: remember });
     }
 }
 
 function toggleAutoUpdate() {
     const autoUpdate = document.getElementById('auto-update').checked;
-    if (window.electronAPI && window.electronAPI.saveSettings) {
-        window.electronAPI.saveSettings({ autoUpdate });
+    if (window.electronAPI) {
+        window.electronAPI.saveSettings({ autoUpdate: autoUpdate });
     }
 }
 
 function checkAppUpdate() {
-    window.open('https://github.com/yourrepo/youtube-downloader/releases', '_blank');
+    window.open('https://github.com/yourusername/youtube-downloader-desktop/releases', '_blank');
     toast('Check GitHub for updates', 'info');
 }
 
-// Add dropdown to user chip
-function addUserDropdown() {
-    const userChip = document.querySelector('.user-chip');
-    if (!userChip) return;
-    
-    const dropdown = document.createElement('div');
-    dropdown.className = 'dropdown';
-    dropdown.style.position = 'relative';
-    
-    const dropdownContent = document.createElement('div');
-    dropdownContent.className = 'dropdown-content';
-    dropdownContent.innerHTML = `
-        <a onclick="switchAccount()">🔄 Switch Account</a>
-        <a onclick="showInfoModal()">ℹ️ About & Info</a>
-        <a onclick="window.open('https://github.com', '_blank')">⭐ Star on GitHub</a>
-    `;
-    
-    userChip.parentNode.insertBefore(dropdown, userChip);
-    dropdown.appendChild(userChip);
-    dropdown.appendChild(dropdownContent);
-}
-
-// Override launchApp to add dropdown
-const originalLaunchAppForDropdown = window.launchApp;
-if (originalLaunchAppForDropdown) {
+// Override launchApp to add desktop features
+const originalLaunchApp = window.launchApp;
+if (originalLaunchApp) {
     window.launchApp = function(user) {
-        originalLaunchAppForDropdown(user);
+        originalLaunchApp(user);
         addUserDropdown();
         const emailEl = document.getElementById('current-account-email');
         if (emailEl) emailEl.textContent = user.email;
     };
 }
 
-// Check if in Electron and show desktop settings
-if (window.electronAPI && window.electronAPI.isElectron) {
-    document.getElementById('desktop-settings').style.display = 'block';
-    window.electronAPI.getSettings().then(settings => {
-        if (settings) {
-            document.getElementById('desktop-download-path').textContent = settings.downloadPath || '~/Downloads';
-            document.getElementById('theme-selector').value = settings.theme || 'dark';
-            document.getElementById('remember-settings').checked = settings.rememberQuality !== false;
-            document.getElementById('auto-update').checked = settings.autoUpdate !== false;
-        }
-    });
-    window.electronAPI.getAppVersion().then(version => {
-        document.getElementById('app-version').textContent = `v${version}`;
-    });
-}
-</script>
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    initDesktopFeatures();
+});

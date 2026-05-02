@@ -1,67 +1,68 @@
 <!-- Add after the rate-card div in settings page -->
       
-      <!-- Account Switching -->
-      <div class="card settings-section">
-        <div class="card-label">Account Management</div>
-        <div class="account-switch-row">
-          <div class="current-account-info">
-            <span class="current-label">Current Account:</span>
-            <span class="current-account-email" id="current-account-email">-</span>
-          </div>
-          <button class="pill-btn outline" onclick="switchAccount()">
-            🔄 Switch Account
-          </button>
-          <button class="pill-btn outline" onclick="logoutAndSwitch()">
-            👤 Login as Different User
-          </button>
-        </div>
-      </div>
+<!-- Account Switching -->
+<div class="card settings-section">
+  <div class="card-label">Account Management</div>
+  <div class="account-switch-row">
+    <div class="current-account-info">
+      <span class="current-label">Current Account:</span>
+      <span class="current-account-email" id="current-account-email">-</span>
+    </div>
+    <button class="pill-btn outline" onclick="switchAccount()">
+      🔄 Switch Account
+    </button>
+    <button class="pill-btn outline" onclick="logoutAndSwitch()">
+      👤 Login as Different User
+    </button>
+  </div>
+</div>
 
-      <!-- Desktop App Settings -->
-      <div class="card settings-section" id="desktop-settings" style="display:none">
-        <div class="card-label">Desktop Application</div>
-        <div class="sys-row">
-          <span class="key">📁 Download Folder</span>
-          <div class="path-selector">
-            <span class="val" id="desktop-download-path">-</span>
-            <button class="pill-btn mini" onclick="changeDownloadFolder()">Change</button>
-          </div>
-        </div>
-        <div class="sys-row">
-          <span class="key">🎨 Theme</span>
-          <select id="theme-selector" onchange="changeTheme()">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="system">System Default</option>
-          </select>
-        </div>
-        <div class="sys-row">
-          <span class="key">💾 Remember Settings</span>
-          <label class="switch">
-            <input type="checkbox" id="remember-settings" onchange="toggleRememberSettings()">
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="sys-row">
-          <span class="key">🔄 Auto-check Updates</span>
-          <label class="switch">
-            <input type="checkbox" id="auto-update" onchange="toggleAutoUpdate()">
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="sys-row">
-          <span class="key">📦 App Version</span>
-          <span class="val" id="app-version">-</span>
-          <button class="pill-btn mini" onclick="checkAppUpdate()">Check Update</button>
-        </div>
-      </div>
+<!-- Desktop App Settings -->
+<div class="card settings-section" id="desktop-settings" style="display:none">
+  <div class="card-label">Desktop Application</div>
+  <div class="sys-row">
+    <span class="key">📁 Download Folder</span>
+    <div class="path-selector">
+      <span class="val" id="desktop-download-path">-</span>
+      <button class="pill-btn mini" onclick="changeDownloadFolder()">Change</button>
+    </div>
+  </div>
+  <div class="sys-row">
+    <span class="key">🎨 Theme</span>
+    <select id="theme-selector" onchange="changeTheme()">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+      <option value="system">System Default</option>
+    </select>
+  </div>
+  <div class="sys-row">
+    <span class="key">💾 Remember Settings</span>
+    <label class="switch">
+      <input type="checkbox" id="remember-settings" onchange="toggleRememberSettings()">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="sys-row">
+    <span class="key">🔄 Auto-check Updates</span>
+    <label class="switch">
+      <input type="checkbox" id="auto-update" onchange="toggleAutoUpdate()">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="sys-row">
+    <span class="key">📦 App Version</span>
+    <span class="val" id="app-version">-</span>
+    <button class="pill-btn mini" onclick="checkAppUpdate()">Check Update</button>
+  </div>
+</div>
 
-      <!-- Info Hub Button -->
-      <div class="info-hub">
-        <button class="info-button" id="info-button" onclick="showInfoModal()">
-          ℹ️ About & Info
-        </button>
-     </div>
+<!-- Info Hub Button -->
+<div class="info-hub">
+  <button class="info-button" id="info-button" onclick="showInfoModal()">
+    ℹ️ About & Info
+  </button>
+</div>
+
 <style>
 /* Add to existing CSS */
 
@@ -216,24 +217,6 @@ input:checked + .slider:before {
   margin-top: 4px;
 }
 
-/* About Modal */
-.about-logo {
-  text-align: center;
-  margin-bottom: 20px;
-}
-.about-logo svg {
-  width: 80px;
-  height: 80px;
-}
-.about-credits {
-  font-size: 11px;
-  color: var(--fg3);
-  text-align: center;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--bdr);
-}
-
 /* Dropdown Menu */
 .dropdown {
   position: relative;
@@ -256,6 +239,7 @@ input:checked + .slider:before {
   text-decoration: none;
   display: block;
   font-size: 13px;
+  cursor: pointer;
   transition: background 0.15s;
 }
 .dropdown-content a:hover {
@@ -278,6 +262,9 @@ body.light-theme {
   --fg2: #666666;
   --fg3: #999999;
 }
+</style>
+
+<script>
 // Account switching functions
 function switchAccount() {
     if (confirm('Switch to a different account? You will need to sign in again.')) {
@@ -292,7 +279,6 @@ function logoutAndSwitch() {
     signOut();
     toast('Signed out. You can now log in with a different account.', 'info');
 }
-<script>
 
 // Info Modal
 function showInfoModal() {
@@ -423,3 +409,4 @@ if (window.electronAPI && window.electronAPI.isElectron) {
         document.getElementById('app-version').textContent = `v${version}`;
     });
 }
+</script>
